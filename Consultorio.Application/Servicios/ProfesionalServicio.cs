@@ -15,7 +15,9 @@ public sealed class ProfesionalServicio(
         if (profesional is null)
             return Result.Fallo(Errores.Profesional.NoEncontrado);
 
-        // TODO (Punto 1): Impedir deshabilitar si tiene turnos confirmados futuros (TieneTurnosConfirmadosFuturosAsync).
+        if (await turnos.TieneTurnosConfirmadosFuturosAsync(profesionalId, ahora))
+            return Result.Fallo(Errores.Profesional.TieneTurnosPendientes);
+
         profesional.Deshabilitar();
         return Result.Éxito();
     }

@@ -16,13 +16,22 @@ public sealed class TurnoServicio(
         DateTime inicio,
         int duraciónMinutos)
     {
-        // TODO (Punto 1): Validar que el profesional exista (Profesional.NoEncontrado) y esté activo (Profesional.Inactivo).
-        // TODO (Punto 1): Validar que no exista superposición horaria con ExisteSuperposiciónAsync (Turno.Superpuesto).
+        var profesional = await profesionales.ObtenerPorIdAsync(profesionalId);
+        if (profesional is null)
+            return Result.Fallo<Turno>(Errores.Profesional.NoEncontrado);
+
+        if (!profesional.Activo)
+            return Result.Fallo<Turno>(Errores.Profesional.Inactivo);
+
         var resultado = Turno.Crear(profesionalId, pacienteDni, pacienteNombre, inicio, duraciónMinutos);
         if (resultado.EsFallo)
             return resultado;
 
-        await turnos.AgregarAsync(resultado.Valor);
+        var turno = resultado.Valor;
+        if (await turnos.ExisteSuperposiciónAsync(profesionalId, turno.Inicio, turno.Fin))
+            return Result.Fallo<Turno>(Errores.Turno.Superpuesto);
+
+        await turnos.AgregarAsync(turno);
         return resultado;
     }
 
