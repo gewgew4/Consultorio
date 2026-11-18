@@ -29,44 +29,52 @@ internal class Program
         builder.Services.AddSerilog((_, cfg) => cfg.ReadFrom.Configuration(builder.Configuration));
 
         builder.Services.AgregarInfraestructura();
-
-        // TODO (Punto 2): Registrar ProfesionalServicio, TurnoServicio, MenuProfesionales y MenuTurnos en DI.
+        builder.Services.AddScoped<ProfesionalServicio>();
+        builder.Services.AddScoped<TurnoServicio>();
+        builder.Services.AddScoped<MenuProfesionales>();
+        builder.Services.AddScoped<MenuTurnos>();
 
         using var host = builder.Build();
         var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
-        // TODO (Punto 3): Proteger el loop con un único try/catch que registre el error con logger
-        // y muestre un mensaje amigable sin cerrar la aplicación.
         while (true)
         {
-            System.Console.WriteLine();
-            System.Console.WriteLine("=== CONSULTORIO ===");
-            System.Console.WriteLine("1. Profesionales");
-            System.Console.WriteLine("2. Turnos");
-            System.Console.WriteLine("3. Simular falla técnica");
-            System.Console.WriteLine("0. Salir");
-            System.Console.Write("Opción: ");
-            var opcion = System.Console.ReadLine()?.Trim();
-
-            if (opcion == "0")
-                return;
-
-            using var alcance = host.Services.CreateScope();
-            var proveedor = alcance.ServiceProvider;
-
-            switch (opcion)
+            try
             {
-                case "1":
-                    await proveedor.GetRequiredService<MenuProfesionales>().EjecutarAsync();
-                    break;
-                case "2":
-                    await proveedor.GetRequiredService<MenuTurnos>().EjecutarAsync();
-                    break;
-                case "3":
-                    throw new InvalidOperationException("Falla técnica simulada.");
-                default:
-                    System.Console.WriteLine("Opción inválida.");
-                    break;
+                System.Console.WriteLine();
+                System.Console.WriteLine("=== CONSULTORIO ===");
+                System.Console.WriteLine("1. Profesionales");
+                System.Console.WriteLine("2. Turnos");
+                System.Console.WriteLine("3. Simular falla técnica");
+                System.Console.WriteLine("0. Salir");
+                System.Console.Write("Opción: ");
+                var opcion = System.Console.ReadLine()?.Trim();
+
+                if (opcion == "0")
+                    return;
+
+                using var alcance = host.Services.CreateScope();
+                var proveedor = alcance.ServiceProvider;
+
+                switch (opcion)
+                {
+                    case "1":
+                        await proveedor.GetRequiredService<MenuProfesionales>().EjecutarAsync();
+                        break;
+                    case "2":
+                        await proveedor.GetRequiredService<MenuTurnos>().EjecutarAsync();
+                        break;
+                    case "3":
+                        throw new InvalidOperationException("Falla técnica simulada.");
+                    default:
+                        System.Console.WriteLine("Opción inválida.");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error inesperado en la consola de Consultorio.");
+                System.Console.WriteLine("Ocurrió un problema inesperado. El detalle quedó registrado en el log.");
             }
         }
     }
